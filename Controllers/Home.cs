@@ -6,47 +6,31 @@ using DomainModel;
 using MVCTemplateProject.Controllers;
 using Moq;
 using NUnit.Framework;
-using ServiceLayer.EfServices;
+using ServiceLayer.ServiceDbSet;
 
 namespace MVCTemplateProject.Tests.Controllers
 {
     [TestFixture]
     public class Home
     {
-        #region Setup/Teardown
-
-        [SetUp]
-        public void Setup()
-        {
-            _unitOfWork = new Mock<EfContext>();
-            _services = new Mock<ServiceLayer.Services>(_unitOfWork.Object);
-        }
-
-        #endregion
-
-        private Mock<EfContext> _unitOfWork;
-        private Mock<ServiceLayer.Services> _services;
-
         [Test]
-        public void IndxShouldReturnListOfPage()
+        public void IndexShouldReturnListOfPage()
         {
-            var posts = new List<Post>
-                            {
-                                new Post {Name = "Test"},
-                                new Post {Name = "Test"},
-                                new Post {Name = "Test"},
-                                new Post {Name = "Test"}
-                            };
+            var uow = new Mock<IUnitOfWork>();
+            var iDbSet = new Mock<IServiceDbSet<Post>>();
 
-            _services.Setup(x => x.Post.List(It.IsAny<Func<Post, bool>>())).Returns(posts);
+            var post = new List<Post>
+                           {
+                               new Post {Id = 1, Name = "I Can"},
+                               new Post {Id = 2, Name = "I I Can"}
+                           };
+            iDbSet.Setup(x => x.List(It.IsAny<Func<Post, bool>>())).Returns(post);
 
-            var controller = new HomeController(_unitOfWork.Object);
-            var result = controller.Index() as ViewResult;
+            var homeConteoller = new HomeController(uow.Object, iDbSet.Object);
+            var result = homeConteoller.Index() as ViewResult;
             var model = result.Model as List<Post>;
-
-
-            Assert.AreEqual(model.Count, 4);
-            Assert.AreEqual(string.Empty, result.ViewName);
+            Assert.AreEqual(2, model.Count);
+            Assert.AreEqual("", result.ViewName);
         }
     }
 }
