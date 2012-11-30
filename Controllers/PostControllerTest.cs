@@ -74,13 +74,8 @@ namespace MVCTemplateProject.Tests.Controllers
 		[Test]
 		public void ShouldShowCreatePostWithPostViewModel()
 		{
-			var postViewModel = new PostViewModel {};
-
 			var result = PostController.Create() as ViewResult;
-			var model = result.Model as PostViewModel;
-
 			Assert.AreEqual(string.Empty, result.ViewName);
-			Assert.AreEqual(model,postViewModel);
 		}
 	}
 }
