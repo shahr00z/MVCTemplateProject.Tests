@@ -5,7 +5,6 @@ using System.Web.Mvc;
 using Data;
 using DomainModel;
 using MVCTemplateProject.Controllers;
-using MVCTemplateProject.Mappers;
 using MVCTemplateProject.ViewModel;
 using Moq;
 using NUnit.Framework;
@@ -24,12 +23,15 @@ namespace MVCTemplateProject.Tests.Controllers
 			UnitOfWork = TestHelper.TestHelper.GetMockUnitOfWork();
 			PostDbSet = TestHelper.TestHelper.GetMockPostDbSet();
 			Posts = TestHelper.TestHelper.GetFakePosts();
-			PostController = new PostController(UnitOfWork.Object, PostDbSet.Object);
+			TagDbSet = TestHelper.TestHelper.GetMockTagDbSet();
+
+			PostController = new PostController(UnitOfWork.Object, PostDbSet.Object, TagDbSet.Object);
 		}
 
 		#endregion
 
 		private Mock<IServiceDbSet<Post>> PostDbSet { get; set; }
+		private Mock<IServiceDbSet<Tag>> TagDbSet { get; set; }
 		private PostController PostController { get; set; }
 		private List<Post> Posts { get; set; }
 
@@ -41,7 +43,7 @@ namespace MVCTemplateProject.Tests.Controllers
 			PostDbSet.Setup(x => x.Get(It.IsAny<Func<Post, bool>>())).Returns(Posts.Find(post => post.Id == 100));
 
 			var redirectToRoutResult =
-				(RedirectToRouteResult) new PostController(UnitOfWork.Object, PostDbSet.Object).Details(100);
+				(RedirectToRouteResult)PostController.Details(100);
 
 			Assert.AreEqual("Index", redirectToRoutResult.RouteValues["action"]);
 			Assert.AreEqual("Home", redirectToRoutResult.RouteValues["Controller"]);
@@ -60,15 +62,23 @@ namespace MVCTemplateProject.Tests.Controllers
 		}
 
 		[Test]
+		public void ListOfStringTagMustConvertToListOfTagCollection()
+		{
+			PostViewModel postViewModel = TestHelper.TestHelper.GetFakePostViewModel();
+			PostController.Create(postViewModel);
+			Assert.AreEqual(postViewModel.RawTags[0],postViewModel.Tags.First().Name);
+		}
+
+		[Test]
 		public void ShouldCreatePostAndRedirectToDetailsWithPostViewModel()
 		{
-			var postViewModel = new PostViewModel {Title = "Test", Id = 1, Content = "st"};
-			Post post = new PostMapper().MappViewModelToModel(postViewModel);
+			PostViewModel postViewModel = TestHelper.TestHelper.GetFakePostViewModel();
 
 			var result = PostController.Create(postViewModel) as RedirectToRouteResult;
 
 			PostDbSet.Verify(set => set.Add(It.IsAny<Post>()), Times.Once());
 			Assert.AreEqual("Details", result.RouteValues["action"]);
+			Assert.AreEqual(result.RouteValues["Title"], postViewModel.Title);
 		}
 
 		[Test]
